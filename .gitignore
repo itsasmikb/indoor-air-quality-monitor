@@ -1,0 +1,39 @@
+# Python-related files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.env
+*.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Flask-related files
+instance/
+*.sqlite3
+
+# Logs
+*.log
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE-specific files
+.vscode/
+.idea/
+
+# Node.js-related files
+node_modules/
+npm-debug.log*
+
+# Static and build directories
+/static/
+*.css.map
+*.js.map
+
+# Data files
+sensor_data.csv
