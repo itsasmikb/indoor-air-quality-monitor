@@ -1,43 +1,52 @@
-import os
+"""Local CSV persistence for sensor readings."""
+from __future__ import annotations
+
 import csv
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 
-# File to store sensor data
-DATA_FILE = "sensor_data.csv"
+ROOT = Path(__file__).resolve().parents[1]
+DATA_FILE = ROOT / "data" / "sensor_readings.csv"
+FIELDS = ("timestamp", "PM2.5", "PM10", "CO2", "AQI", "category")
 
-# Function to save sensor readings to a CSV file
-def save_sensor_data(sensor_data, timestamp, aqi):
-    # Check if file exists, if not, create with headers
-    file_exists = os.path.isfile(DATA_FILE)
-    
-    with open(DATA_FILE, mode="a", newline="") as file:
-        writer = csv.writer(file)
 
-        # Write header if the file is new
-        if not file_exists:
-            writer.writerow(["Timestamp", "PM2.5", "PM10", "CO2", "AQI"])
+def generate_timestamp() -> str:
+    return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
-        # Write sensor data
-        writer.writerow([timestamp, sensor_data["PM2.5"], sensor_data["PM10"], sensor_data["CO2"], aqi])
 
-# Function to load historical data
-def load_historical_data():
-    data = []
-    
-    if not os.path.isfile(DATA_FILE):
-        return {"error": "No data available"}
+def save_sensor_data(sensor_data: dict, timestamp: str, aqi: int, category: str) -> None:
+    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
+    exists = DATA_FILE.exists() and DATA_FILE.stat().st_size > 0
+    with DATA_FILE.open("a", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        if not exists:
+            writer.writeheader()
+        writer.writerow({
+            "timestamp": timestamp,
+            "PM2.5": sensor_data["PM2.5"],
+            "PM10": sensor_data["PM10"],
+            "CO2": sensor_data["CO2"],
+            "AQI": aqi,
+            "category": category,
+        })
 
-    with open(DATA_FILE, mode="r") as file:
-        reader = csv.DictReader(file)
-        
-        for row in reader:
-            data.append({
-                "Timestamp": row["Timestamp"],
+
+def load_historical_data(limit: int = 100) -> list[dict]:
+    if not DATA_FILE.exists():
+        return []
+    with DATA_FILE.open("r", newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    result = []
+    for row in rows[-max(1, min(int(limit), 1000)):]:
+        try:
+            result.append({
+                "timestamp": row["timestamp"],
                 "PM2.5": float(row["PM2.5"]),
                 "PM10": float(row["PM10"]),
                 "CO2": float(row["CO2"]),
-                "AQI": float(row["AQI"])
+                "AQI": int(float(row["AQI"])),
+                "category": row.get("category", ""),
             })
-    
-    return data
- 
+        except (KeyError, TypeError, ValueError):
+            continue
+    return result

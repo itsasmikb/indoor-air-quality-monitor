@@ -1,87 +1,37 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indoor Air Quality Monitor</title>
-    <style> 
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 20px;
-        }
-        h1 {
-            color: #333;
-        }
-        #aqi-container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            min-width: 300px;
-        }
-        #aqi-value {
-            font-size: 40px;
-            font-weight: bold;
-        }
-        #aqi-category {
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        #recommendations {
-            margin-top: 20px;
-            font-size: 14px;
-            color: #555;
-        }
-        .good { color: green; }
-        .moderate { color: orange; }
-        .unhealthy { color: red; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101e2b">
+  <meta name="description" content="Indoor air quality demo dashboard for particulate matter and CO₂ readings.">
+  <title>Airwise — Indoor Air Monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
-    <h1>Indoor Air Quality Monitor</h1>
-    <div id="aqi-container">
-        <p><strong>Air Quality Index (AQI):</strong></p>
-        <p id="aqi-value">--</p>
-        <p id="aqi-category">Fetching data...</p>
-        <p id="recommendations"></p>
-    </div>
-
-    <script>
-        function fetchAQIData() {
-            fetch('/api/sensor_data')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("aqi-value").innerText = data.aqi;
-                    document.getElementById("aqi-category").innerText = data.aqi_category;
-                    document.getElementById("recommendations").innerText = data.recommendations;
-
-                    // Change text color based on AQI category
-                    let categoryElement = document.getElementById("aqi-category");
-                    categoryElement.className = "";  // Reset class
-                    if (data.aqi_category.includes("Good")) {
-                        categoryElement.classList.add("good");
-                    } else if (data.aqi_category.includes("Moderate")) {
-                        categoryElement.classList.add("moderate");
-                    } else {
-                        categoryElement.classList.add("unhealthy");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error fetching AQI data:", error);
-                    document.getElementById("aqi-category").innerText = "Error fetching data!";
-                });
-        }
-
-        // Fetch AQI data every 5 seconds
-        setInterval(fetchAQIData, 5000);
-        fetchAQIData(); // Initial fetch
-    </script>
-
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Airwise home"><span class="brand-mark">A</span> airwise<span class="brand-dot">.</span></a>
+    <div class="topbar-right"><span class="live-dot"></span><span>INDOOR ENVIRONMENT</span><span class="demo-pill">DEMO MODE</span></div>
+  </header>
+  <main class="shell">
+    <section class="page-heading">
+      <div><p class="eyebrow">ENVIRONMENTAL MONITORING / 01</p><h1>Indoor air, at a glance.</h1><p class="subtitle">A simple view of particulate matter and ventilation indicators.</p></div>
+      <button id="refresh" class="refresh-button" type="button"><span aria-hidden="true">↻</span> Refresh readings</button>
+    </section>
+    <div id="notice" class="notice" role="status">Generating demo readings…</div>
+    <section class="metrics" aria-label="Current sensor readings">
+      <article class="metric-card"><div class="metric-top"><span>PM2.5</span><span class="unit">µg/m³</span></div><div id="pm25" class="metric-value">—</div><p>Fine particles</p><div class="meter"><span id="pm25-meter"></span></div></article>
+      <article class="metric-card"><div class="metric-top"><span>PM10</span><span class="unit">µg/m³</span></div><div id="pm10" class="metric-value">—</div><p>Coarse particles</p><div class="meter"><span id="pm10-meter"></span></div></article>
+      <article class="metric-card"><div class="metric-top"><span>CO₂</span><span class="unit">ppm</span></div><div id="co2" class="metric-value">—</div><p>Ventilation indicator</p><div class="meter"><span id="co2-meter"></span></div></article>
+      <article class="metric-card aqi-card"><div class="metric-top"><span>Indicative AQI</span><span class="unit">0–500</span></div><div id="aqi" class="metric-value">—</div><p id="category" class="category">Waiting for readings</p><div class="meter"><span id="aqi-meter"></span></div></article>
+    </section>
+    <section class="content-grid">
+      <article class="panel trend-panel"><div class="panel-heading"><div><p class="eyebrow">RECENT HISTORY</p><h2>Reading trend</h2></div><span id="history-count" class="subtle">0 saved readings</span></div><div id="chart" class="chart-empty">Saved readings will appear here after sensor data is submitted.</div><div class="chart-legend"><span><i class="legend-aqi"></i> AQI</span><span><i class="legend-pm"></i> PM2.5</span></div></article>
+      <article class="panel guidance-panel"><p class="eyebrow">WHAT IT MEANS</p><h2>Reading notes</h2><p id="timestamp" class="timestamp">Last updated —</p><ul id="guidance" class="guidance-list"><li>Waiting for a reading.</li></ul><div class="caveat"><strong>About this estimate</strong><p>Instant readings are not official AQI measurements. Official AQI reporting uses prescribed averaging periods and validated instruments. This demo is for learning, not health or regulatory decisions.</p></div></article>
+    </section>
+    <section class="api-note"><span class="api-icon">{ }</span><div><strong>Connect a sensor</strong><p>Send a JSON payload to <code>POST /api/sensor_data</code> with <code>PM2.5</code>, <code>PM10</code>, and <code>CO2</code> numeric fields. Saved readings appear in history.</p></div></section>
+  </main>
+  <footer><span>AIRWISE / PERSONAL PROJECT</span><span>Simulated readings unless hardware data is submitted</span></footer>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
 </body>
 </html>
-
