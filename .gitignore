@@ -37,3 +37,13 @@ npm-debug.log*
 
 # Data files
 sensor_data.csv
+
+# Local sensor history and Python environments
+data/sensor_readings.csv
+data/
+!.gitkeep
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
